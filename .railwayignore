@@ -1,0 +1,14 @@
+# Railway ignore file - exclude unnecessary files from deployment
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.git/
+.gitignore
+*.log
+test_models.py
+.vscode/
+.idea/
+
+# Keep the fallback model creator
+!create_fallback_model.py
