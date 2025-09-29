@@ -77,34 +77,36 @@ def create_sankey_diagram(predictions, process_type="Secondary Production"):
             (100 - collection_rate) * 0.4   # Collection to incineration
         ]
         
-        # Enhanced color scheme
+        # Enhanced color scheme with better contrast for white text
         colors = [
-            "#FF6B6B",  # Virgin Raw Materials - Red
-            "#2ECC71",  # Recycled Materials - Green
-            "#F39C12",  # Energy - Orange
-            "#3498DB",  # Water - Blue
-            "#9B59B6",  # Transportation - Purple
-            "#1ABC9C",  # Production - Teal
-            "#F1C40F",  # Product - Yellow
-            "#E74C3C",  # Emissions - Dark Red
-            "#5DADE2",  # Wastewater - Light Blue
-            "#D35400",  # Solid Waste - Brown
-            "#27AE60",  # Product Use - Dark Green
-            "#8E44AD",  # Collection - Dark Purple
-            "#16A085",  # Recycling - Dark Teal
-            "#2980B9",  # Reuse - Dark Blue
-            "#7F8C8D",  # Landfill - Gray
-            "#C0392B"   # Incineration - Dark Red
+            "#C0392B",  # Virgin Raw Materials - Dark Red
+            "#27AE60",  # Recycled Materials - Dark Green 
+            "#E67E22",  # Energy - Dark Orange
+            "#2980B9",  # Water - Dark Blue
+            "#8E44AD",  # Transportation - Dark Purple
+            "#16A085",  # Production - Dark Teal
+            "#F39C12",  # Product - Orange (darker than yellow)
+            "#A93226",  # Emissions - Very Dark Red
+            "#1F618D",  # Wastewater - Dark Blue
+            "#935116",  # Solid Waste - Dark Brown
+            "#196F3D",  # Product Use - Very Dark Green
+            "#6C3483",  # Collection - Very Dark Purple
+            "#117A65",  # Recycling - Very Dark Teal
+            "#1B4F72",  # Reuse - Very Dark Blue
+            "#5D6D7E",  # Landfill - Dark Gray
+            "#922B21"   # Incineration - Very Dark Red
         ]
         
-        # Create enhanced Sankey
+        # Create enhanced Sankey with improved text visibility
         fig = go.Figure(data=[go.Sankey(
             node=dict(
                 pad=20,
-                thickness=25,
-                line=dict(color="black", width=1),
+                thickness=30,
+                line=dict(color="#2C3E50", width=2),
                 label=labels,
                 color=colors,
+                # Custom font styling for node labels
+                hovertemplate='<b>%{label}</b><br>Value: %{value}<extra></extra>',
                 x=[0.1, 0.1, 0.05, 0.05, 0.05, 0.3, 0.5, 0.4, 0.4, 0.4, 0.7, 0.85, 0.95, 0.95, 0.95, 0.95],
                 y=[0.1, 0.3, 0.5, 0.7, 0.9, 0.5, 0.5, 0.2, 0.4, 0.6, 0.5, 0.5, 0.2, 0.4, 0.6, 0.8]
             ),
@@ -112,24 +114,27 @@ def create_sankey_diagram(predictions, process_type="Secondary Production"):
                 source=sources,
                 target=targets,
                 value=values,
+                # Improved link colors with better opacity for visibility
                 color=[
-                    "rgba(255, 107, 107, 0.3)",  # Virgin materials
-                    "rgba(46, 204, 113, 0.3)",   # Recycled materials
-                    "rgba(243, 156, 18, 0.3)",   # Energy
-                    "rgba(52, 152, 219, 0.3)",   # Water
-                    "rgba(155, 89, 182, 0.3)",   # Transport
-                    "rgba(241, 196, 15, 0.6)",   # Production to product
-                    "rgba(231, 76, 60, 0.4)",    # Emissions
-                    "rgba(93, 173, 226, 0.3)",   # Wastewater
-                    "rgba(211, 84, 0, 0.3)",     # Solid waste
-                    "rgba(39, 174, 96, 0.5)",    # Product use
-                    "rgba(142, 68, 173, 0.4)",   # Collection
-                    "rgba(41, 128, 185, 0.4)",   # Reuse
-                    "rgba(127, 140, 141, 0.3)",  # To waste
-                    "rgba(22, 160, 133, 0.5)",   # Recycling
-                    "rgba(127, 140, 141, 0.4)",  # Landfill
-                    "rgba(192, 57, 43, 0.4)"     # Incineration
-                ]
+                    "rgba(192, 57, 43, 0.4)",    # Virgin materials - darker
+                    "rgba(39, 174, 96, 0.5)",    # Recycled materials - stronger
+                    "rgba(230, 126, 34, 0.4)",   # Energy - darker orange
+                    "rgba(41, 128, 185, 0.4)",   # Water - darker blue
+                    "rgba(142, 68, 173, 0.4)",   # Transport - darker purple
+                    "rgba(243, 156, 18, 0.7)",   # Production to product - more opaque
+                    "rgba(169, 50, 38, 0.5)",    # Emissions - much darker
+                    "rgba(31, 97, 141, 0.4)",    # Wastewater - darker
+                    "rgba(147, 81, 22, 0.4)",    # Solid waste - darker brown
+                    "rgba(25, 111, 61, 0.5)",    # Product use - darker green
+                    "rgba(108, 52, 131, 0.4)",   # Collection - darker purple
+                    "rgba(27, 79, 114, 0.4)",    # Reuse - darker blue
+                    "rgba(93, 109, 126, 0.4)",   # To waste - darker gray
+                    "rgba(17, 122, 101, 0.6)",   # Recycling - darker teal
+                    "rgba(93, 109, 126, 0.5)",   # Landfill - darker gray
+                    "rgba(146, 43, 33, 0.5)"     # Incineration - darker red
+                ],
+                # Add hover template for links
+                hovertemplate='<b>Flow:</b> %{source.label} → %{target.label}<br><b>Volume:</b> %{value:.1f}<extra></extra>'
             )
         )])
         
@@ -143,30 +148,53 @@ def create_sankey_diagram(predictions, process_type="Secondary Production"):
                 y=0.95,
                 xanchor='center',
                 yanchor='top',
-                font=dict(size=16, color="#2C3E50")
+                font=dict(size=18, color="#2C3E50", family="Arial Black")
             ),
-            font_size=10,
-            height=550,
-            margin=dict(t=100, l=20, r=20, b=20),
-            paper_bgcolor="white",
-            plot_bgcolor="white"
+            # Improved font settings for node labels
+            font=dict(
+                size=12,
+                color="#FFFFFF",  # White text for contrast
+                family="Arial Bold"
+            ),
+            height=600,
+            margin=dict(t=100, l=30, r=30, b=30),
+            paper_bgcolor="#F8F9FA",  # Light gray background
+            plot_bgcolor="#F8F9FA",
+            # Add annotations for better readability
+            annotations=[
+                dict(
+                    text="🔄 Material flows from left to right • Node size = Flow volume",
+                    showarrow=False,
+                    x=0.5, y=-0.05,
+                    xref="paper", yref="paper",
+                    font=dict(size=11, color="#7F8C8D"),
+                    xanchor="center"
+                )
+            ]
         )
         
         return fig
     
     except Exception as e:
-        # Enhanced fallback chart
+        # Enhanced fallback chart with better text visibility
         fig = go.Figure()
         fig.add_annotation(
             text=f"⚠️ Sankey diagram temporarily unavailable<br>Error: {str(e)}", 
             xref="paper", yref="paper", x=0.5, y=0.5,
-            font=dict(size=14, color="#E74C3C"),
+            font=dict(size=16, color="#FFFFFF", family="Arial Bold"),
+            bgcolor="#E74C3C",  # Red background for white text
+            bordercolor="#C0392B",
+            borderwidth=2,
             showarrow=False
         )
         fig.update_layout(
-            title="Material Flow Analysis", 
-            height=400,
-            paper_bgcolor="#F8F9FA"
+            title=dict(
+                text="Complete Material Flow Analysis", 
+                font=dict(size=18, color="#2C3E50")
+            ),
+            height=450,
+            paper_bgcolor="#F8F9FA",
+            plot_bgcolor="#FFFFFF"
         )
         return fig
 
@@ -209,9 +237,20 @@ def create_energy_comparison(comparison_df):
     
     except Exception as e:
         fig = go.Figure()
-        fig.add_annotation(text=f"Energy chart error: {str(e)}", 
-                          xref="paper", yref="paper", x=0.5, y=0.5)
-        fig.update_layout(title="Energy Comparison", height=400)
+        fig.add_annotation(
+            text=f"⚠️ Energy chart error: {str(e)}", 
+            xref="paper", yref="paper", x=0.5, y=0.5,
+            font=dict(size=14, color="#FFFFFF", family="Arial Bold"),
+            bgcolor="#E74C3C",
+            bordercolor="#C0392B",
+            borderwidth=2,
+            showarrow=False
+        )
+        fig.update_layout(
+            title=dict(text="Energy Comparison", font=dict(color="#2C3E50")), 
+            height=400,
+            paper_bgcolor="#F8F9FA"
+        )
         return fig
 
 def create_emissions_comparison(comparison_df):
@@ -253,9 +292,20 @@ def create_emissions_comparison(comparison_df):
     
     except Exception as e:
         fig = go.Figure()
-        fig.add_annotation(text=f"Emissions chart error: {str(e)}", 
-                          xref="paper", yref="paper", x=0.5, y=0.5)
-        fig.update_layout(title="Emissions Comparison", height=400)
+        fig.add_annotation(
+            text=f"⚠️ Emissions chart error: {str(e)}", 
+            xref="paper", yref="paper", x=0.5, y=0.5,
+            font=dict(size=14, color="#FFFFFF", family="Arial Bold"),
+            bgcolor="#E74C3C",
+            bordercolor="#C0392B",
+            borderwidth=2,
+            showarrow=False
+        )
+        fig.update_layout(
+            title=dict(text="Emissions Comparison", font=dict(color="#2C3E50")), 
+            height=400,
+            paper_bgcolor="#F8F9FA"
+        )
         return fig
 
 def create_circularity_comparison(comparison_df):
@@ -304,9 +354,20 @@ def create_circularity_comparison(comparison_df):
     
     except Exception as e:
         fig = go.Figure()
-        fig.add_annotation(text=f"Circularity chart error: {str(e)}", 
-                          xref="paper", yref="paper", x=0.5, y=0.5)
-        fig.update_layout(title="Circularity Comparison", height=400)
+        fig.add_annotation(
+            text=f"⚠️ Circularity chart error: {str(e)}", 
+            xref="paper", yref="paper", x=0.5, y=0.5,
+            font=dict(size=14, color="#FFFFFF", family="Arial Bold"),
+            bgcolor="#E74C3C",
+            bordercolor="#C0392B",
+            borderwidth=2,
+            showarrow=False
+        )
+        fig.update_layout(
+            title=dict(text="Circularity Comparison", font=dict(color="#2C3E50")), 
+            height=400,
+            paper_bgcolor="#F8F9FA"
+        )
         return fig
 
 def create_water_usage_chart(comparison_df):
