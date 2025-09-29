@@ -1,17 +1,2 @@
-providers = ["python"]
-
-[phases.setup]
-nixPkgs = ["python311"]
-nixLibs = ["glibc"]
-
-[phases.install]
-cmds = [
-    "pip install --upgrade pip setuptools wheel",
-    "pip install -r requirements.txt"
-]
-
-[phases.build]
-cmds = ["echo 'Build completed successfully!'"]
-
 [start]
 cmd = "streamlit run app/app.py --server.port $PORT --server.address 0.0.0.0 --server.headless true --server.enableCORS false --server.enableXsrfProtection false"
