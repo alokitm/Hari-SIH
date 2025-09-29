@@ -14,8 +14,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 # Copy the rest of the application
 COPY . .
 
+# Make start script executable
+RUN chmod +x start.sh
+
 # Expose the port that Railway will use
 EXPOSE 8501
 
 # Command to run the application
-CMD streamlit run app/app.py --server.port $PORT --server.address 0.0.0.0 --server.headless true --server.enableCORS false --server.enableXsrfProtection false
+CMD ["./start.sh"]
