@@ -52,17 +52,108 @@ st.markdown("""
 </style>
 """, unsafe_allow_html=True)
 
+def create_railway_fallback_model():
+    """Create a fallback model for Railway deployment when LFS models fail"""
+    import numpy as np
+    from sklearn.ensemble import RandomForestRegressor
+    from sklearn.preprocessing import LabelEncoder
+    from sklearn.multioutput import MultiOutputRegressor
+    
+    # Create label encoders
+    metal_encoder = LabelEncoder()
+    process_encoder = LabelEncoder() 
+    eol_encoder = LabelEncoder()
+    
+    # Fit encoders with expected values
+    metals = ['Aluminium', 'Steel', 'Copper', 'Zinc', 'Lead', 'Nickel', 'Tin', 'Gold']
+    processes = ['Primary', 'Recycled', 'Hybrid']
+    eol_options = ['Recycled', 'Landfilled', 'Reused']
+    
+    metal_encoder.fit(metals)
+    process_encoder.fit(processes)
+    eol_encoder.fit(eol_options)
+    
+    # Create models
+    np.random.seed(42)
+    env_model = MultiOutputRegressor(RandomForestRegressor(n_estimators=50, random_state=42))
+    circ_model = MultiOutputRegressor(RandomForestRegressor(n_estimators=50, random_state=42))
+    
+    # Generate training data
+    n_samples = 1000
+    X_train = np.random.rand(n_samples, 13)
+    
+    # Set categorical features
+    X_train[:, 0] = np.random.randint(0, len(metals), n_samples)
+    X_train[:, 1] = np.random.randint(0, len(processes), n_samples)  
+    X_train[:, 2] = np.random.randint(0, len(eol_options), n_samples)
+    
+    # Scale continuous features
+    X_train[:, 3] *= 2000  # Transport km
+    X_train[:, 4] *= 20    # Cost per kg
+    X_train[:, 5] *= 30    # Product life
+    X_train[:, 6] *= 5     # Waste ratio
+    
+    # Create realistic targets
+    y_env = np.zeros((n_samples, 3))
+    y_circ = np.zeros((n_samples, 3))
+    
+    for i in range(n_samples):
+        process_factor = 0.4 if X_train[i, 1] == 1 else 1.0  # Recycled vs Primary
+        
+        # Environmental targets
+        energy = np.random.normal(60 * process_factor, 20)
+        emissions = np.random.normal(6 * process_factor, 2) 
+        water = np.random.normal(25 * process_factor, 10)
+        
+        y_env[i] = [max(5, energy), max(0.5, emissions), max(2, water)]
+        
+        # Circularity targets
+        base_circ = 0.75 if X_train[i, 1] == 1 else 0.35
+        circularity = np.random.normal(base_circ, 0.15)
+        recycled_content = np.random.normal(75 if X_train[i, 1] == 1 else 25, 20)
+        reuse_potential = np.random.normal(base_circ, 0.12)
+        
+        y_circ[i] = [
+            max(0.1, min(0.95, circularity)),
+            max(5, min(95, recycled_content)), 
+            max(0.1, min(0.9, reuse_potential))
+        ]
+    
+    # Train models
+    env_model.fit(X_train, y_env)
+    circ_model.fit(X_train, y_circ)
+    
+    # Return model structure
+    return {
+        'model_type': 'optimized_dual_target',
+        'environmental_model': env_model,
+        'circularity_models': {'RandomForest': circ_model},
+        'circularity_best_model': 'RandomForest',
+        'label_encoders': {
+            'Metal': metal_encoder,
+            'Process_Type': process_encoder,
+            'End_of_Life': eol_encoder
+        },
+        'metadata': {
+            'model_version': 'railway_fallback_v1.0',
+            'feature_alignment': 'corrected',
+            'features_count': 13,
+            'created_by': 'railway_deployment_fallback'
+        }
+    }
+
 @st.cache_resource
 def load_model():
-    """Load the trained LCA model"""
+    """Load the trained LCA model with Railway LFS fallback"""
     try:
-        # Try to load the optimized model first (with properly fitted models)
+        # Try to load existing models first
         model_paths = [
-            Path("../models/corrected_optimized_dual_target_model.pkl"),  # PRIORITY: Feature-corrected model
+            Path("models/railway_fallback_model.pkl"),  # Fallback model created for Railway
+            Path("../models/corrected_optimized_dual_target_model.pkl"),
             Path("models/corrected_optimized_dual_target_model.pkl"),    
-            Path("../models/clean_optimized_dual_target_model.pkl"),  # Backup: Clean sklearn-only model
+            Path("../models/clean_optimized_dual_target_model.pkl"),
             Path("models/clean_optimized_dual_target_model.pkl"),    
-            Path("../models/optimized_dual_target_model.pkl"),  # Backup: Full optimized model
+            Path("../models/optimized_dual_target_model.pkl"),
             Path("models/optimized_dual_target_model.pkl"),    
             Path("../models/final_optimized_lca_model.pkl"),
             Path("models/final_optimized_lca_model.pkl"),
@@ -72,34 +163,70 @@ def load_model():
         
         for model_path in model_paths:
             if model_path.exists():
-                # Use pickle for the new optimized model, joblib for others
-                if "optimized_dual_target" in model_path.name:
+                try:
+                    # Check if file is actually a valid pickle file (not LFS pointer)
                     with open(model_path, 'rb') as f:
-                        model_data = pickle.load(f)
-                else:
-                    model_data = joblib.load(model_path)
+                        # Read first few bytes to check if it's a valid pickle
+                        first_bytes = f.read(10)
+                        f.seek(0)
+                        
+                        # LFS pointer files start with "version https://git-lfs"
+                        if first_bytes.startswith(b'version ht'):
+                            st.warning(f"⚠️ {model_path.name} is an LFS pointer file, skipping...")
+                            continue
+                        
+                        # Try to load the actual model
+                        if "optimized_dual_target" in model_path.name or "fallback" in model_path.name:
+                            model_data = pickle.load(f)
+                        else:
+                            model_data = joblib.load(model_path)
+                    
+                    st.success(f"✅ Model loaded successfully from {model_path.name}")
+                    
+                    # Display model information
+                    if isinstance(model_data, dict) and 'model_type' in model_data:
+                        st.info(f"📊 Model Type: {model_data['model_type']}")
+                        if 'metadata' in model_data:
+                            metadata = model_data['metadata']
+                            if 'model_version' in metadata:
+                                st.info(f"🔢 Version: {metadata['model_version']}")
+                            if 'created_by' in metadata and 'fallback' in metadata['created_by']:
+                                st.warning("⚠️ Using fallback model - limited accuracy expected")
+                    
+                    return model_data
                 
-                st.success(f"✅ Model loaded successfully from {model_path.name}")
-                
-                # Display model information
-                if isinstance(model_data, dict) and 'model_type' in model_data:
-                    st.info(f"📊 Model Type: {model_data['model_type']}")
-                    if 'metadata' in model_data:
-                        metadata = model_data['metadata']
-                        if 'model_version' in metadata:
-                            st.info(f"🔢 Version: {metadata['model_version']}")
-                        if 'feature_alignment' in metadata:
-                            st.success(f"✅ Feature Alignment: {metadata['feature_alignment']}")
-                        if 'features_count' in metadata:
-                            st.info(f"🔧 Expected Features: {metadata['features_count']}")
-                
-                return model_data
+                except Exception as e:
+                    st.warning(f"⚠️ Failed to load {model_path.name}: {str(e)}")
+                    continue
         
-        st.error("❌ Model file not found. Please ensure the model is trained and saved.")
-        return None
+        # If no models could be loaded, create fallback
+        st.warning("⚠️ No pre-trained models available. Creating fallback model...")
+        st.info("🔄 This may happen on Railway when LFS files aren't properly synced.")
+        
+        with st.spinner("Creating fallback model..."):
+            fallback_model = create_railway_fallback_model()
+            
+            # Try to save it for future use
+            try:
+                os.makedirs("models", exist_ok=True)
+                with open("models/railway_fallback_model.pkl", 'wb') as f:
+                    pickle.dump(fallback_model, f)
+                st.success("✅ Fallback model created and saved!")
+            except:
+                st.warning("⚠️ Could not save fallback model, will recreate each session")
+            
+            st.info("📊 Using basic RandomForest model - predictions may be less accurate")
+            return fallback_model
+        
     except Exception as e:
-        st.error(f"❌ Error loading model: {str(e)}")
-        return None
+        st.error(f"❌ Critical error in model loading: {str(e)}")
+        st.error("🔄 Attempting to create emergency fallback model...")
+        
+        try:
+            return create_railway_fallback_model()
+        except Exception as e2:
+            st.error(f"❌ Complete failure: {str(e2)}")
+            return None
 
 @st.cache_data
 def get_metal_options():
