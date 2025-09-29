@@ -23,3 +23,4 @@ protobuf==3.20.3
 
 # Railway specific optimizations
 gunicorn==21.2.0
+requests==2.31.0
